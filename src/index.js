@@ -6,5 +6,5 @@ import registerServiceWorker from './registerServiceWorker';
 
 ReactDOM.render(<App />, document.getElementById('root'));
 registerServiceWorker();
-const port = process.env.REACT_APP_PORT || 3000;
+const port = process.env.REACT_APP_PORT || 3001;
 
