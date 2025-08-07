@@ -1,9 +1,25 @@
 pipeline {
   agent any
-  environment {
-    REACT_APP_PORT = (env.BRANCH_NAME == 'main') ? '3000' : '3001'
+
+  tools {
+    nodejs "Node 18"
   }
+
+  environment {
+    IMAGE_NAME = "my-react-app:${env.BRANCH_NAME}"
+  }
+
   stages {
+
+    stage('Init') {
+      steps {
+        script {
+          // Set port dynamically based on branch name
+          env.REACT_APP_PORT = (env.BRANCH_NAME == 'main') ? '3000' : '3001'
+        }
+      }
+    }
+
     stage('Checkout') {
       steps {
         checkout scm
@@ -12,12 +28,14 @@ pipeline {
 
     stage('Build') {
       steps {
-        sh './scripts/build.sh'
+        sh 'chmod +x scripts/build.sh'
+        sh 'REACT_APP_PORT=${REACT_APP_PORT} ./scripts/build.sh'
       }
     }
 
     stage('Test') {
       steps {
+        sh 'chmod +x scripts/test.sh'
         sh './scripts/test.sh'
       }
     }
@@ -25,14 +43,18 @@ pipeline {
     stage('Build Docker Image') {
       steps {
         script {
-          dockerImage = docker.build("my-app:${env.BRANCH_NAME}")
+          dockerImage = docker.build("${IMAGE_NAME}")
         }
       }
     }
 
     stage('Deploy') {
       steps {
-        sh "docker run -d -p ${REACT_APP_PORT}:${REACT_APP_PORT} --name app-${env.BRANCH_NAME} -e REACT_APP_PORT=${REACT_APP_PORT} my-app:${env.BRANCH_NAME}"
+        sh """
+          docker stop ${env.BRANCH_NAME} || true
+          docker rm ${env.BRANCH_NAME} || true
+          docker run -d -p ${REACT_APP_PORT}:80 --name ${env.BRANCH_NAME} ${IMAGE_NAME}
+        """
       }
     }
   }
