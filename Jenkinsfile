@@ -53,7 +53,7 @@ pipeline {
         sh """
           docker stop ${env.BRANCH_NAME} || true
           docker rm ${env.BRANCH_NAME} || true
-          docker run -d -p ${REACT_APP_PORT}:80 --name ${env.BRANCH_NAME} ${IMAGE_NAME}
+          docker run -d -p ${REACT_APP_PORT}:${REACT_APP_PORT} -e REACT_APP_PORT=${REACT_APP_PORT} --name ${env.BRANCH_NAME} ${IMAGE_NAME}
         """
       }
     }
